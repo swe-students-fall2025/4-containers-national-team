@@ -41,7 +41,7 @@
  });
 
 
-//Audio recording functionality
+//Audio recording functionality NEEDS WORK FOR AI
  document.addEventListener("DOMContentLoaded", function () {
       var startBtn = document.getElementById("start-btn");
       var stopBtn = document.getElementById("stop-btn");
