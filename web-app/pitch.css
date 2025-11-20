@@ -1,0 +1,88 @@
+ * {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-image: url("pitch-background.jpeg");  
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      height: 100vh;
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      box-sizing: border-box;
+      z-index: 1000;
+    }
+
+    header h1 {
+      font-size: 24px;
+      color: white;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      margin-left: 15px;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    main {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-top: 60px;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .main-box {
+      background: rgba(255, 255, 255, 0.88);
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      width: 500px;
+      max-width: 90%;
+    }
+
+    button {
+      padding: 12px 20px;
+      margin: 8px;
+      font-size: 16px;
+      background: black;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #aaaaaa;
+      cursor: not-allowed;
+    }
+
+    button:hover:not(:disabled) {
+      background: #333;
+    }
+
+    audio {
+      margin-top: 15px;
+      width: 100%;
+    }

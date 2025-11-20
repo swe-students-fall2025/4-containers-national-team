@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pitch Detector</title>
+  <link rel="stylesheet" href="index.css"/>
+<script src="script.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Pitch Detector</h1>
+    <nav>
+      <a href="index.html">Home</a> |
+      <a href="pitch.html">Record</a> |
+      <a href="history.html">History</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="main-box">
+      <h2>This is Pitch Detector</h2>
+      <p>A detector to help you find the pitch of your voice!</p>
+      <button id="login-btn" type="button">Log In</button>
+    </div>
+
+  <section id="login-container" hidden>
+    <h2>Login</h2>
+    <p>Enter your credentials to continue.</p>
+    <form id="login-form">
+      <div>
+        <label for="login-username">Username:</label>
+        <input type="text" id="login-username" required />
+      </div>
+      <div>
+        <label for="login-password">Password:</label>
+        <input type="password" id="login-password" required />
+      </div>
+      <button type="submit">Submit</button>
+      <button id="login-close-btn" type="button">Close</button>
+    </form>
+  </section>
+</body>
+</html>
