@@ -1,5 +1,9 @@
-from __init__ import create_app
+"""Entry point for running the pitch detector web app."""
+
+# pylint: disable=import-error
+
 import os
+from __init__ import create_app
 
 app = create_app()
 

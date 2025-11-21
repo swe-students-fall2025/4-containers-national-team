@@ -1,3 +1,5 @@
+"""Flask routes for the pitch detector web app."""
+
 import os
 import uuid
 from datetime import datetime
@@ -16,21 +18,25 @@ bp = Blueprint("main", __name__)
 
 @bp.route("/")
 def home():
+    """Render the home page."""
     return render_template("index.html")
 
 
 @bp.route("/pitch")
 def pitch_page():
+    """Render the recording page."""
     return render_template("pitch.html")
 
 
 @bp.route("/history")
 def history_page():
+    """Render the history page."""
     return render_template("history.html")
 
 
 @bp.route("/api/upload", methods=["POST"])
 def upload_audio():
+    """Handle audio upload, save file, and create a recording document."""
     if "audio" not in request.files:
         return jsonify({"error": "missing 'audio' file field"}), 400
 
@@ -87,13 +93,10 @@ def upload_audio():
 
 @bp.route("/api/recordings", methods=["GET"])
 def list_recordings():
+    """Return recent recordings and their pitch analysis as JSON."""
     db = current_app.db  # type: ignore[attr-defined]
 
-    cursor = (
-        db.recordings.find().sort("created_at", -1).limit(20)
-    )
-
-    audio_dir = current_app.config["AUDIO_DIR"]
+    cursor = db.recordings.find().sort("created_at", -1).limit(20)
 
     recordings = []
     for doc in cursor:
@@ -102,9 +105,9 @@ def list_recordings():
         recordings.append(
             {
                 "id": rec_id,
-                "created_at": doc.get("created_at").isoformat()
-                if doc.get("created_at")
-                else None,
+                "created_at": (
+                    doc.get("created_at").isoformat() if doc.get("created_at") else None
+                ),
                 "status": doc.get("status"),
                 "audio_filename": doc.get("audio_filename"),
                 "audio_url": f"/recordings/{doc.get('audio_filename')}",
@@ -121,5 +124,6 @@ def list_recordings():
 
 @bp.route("/recordings/<path:filename>", methods=["GET"])
 def serve_recording(filename: str):
+    """Serve a saved audio file by filename."""
     audio_dir = current_app.config["AUDIO_DIR"]
     return send_from_directory(audio_dir, filename)
