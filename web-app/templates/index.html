@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pitch Detector</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}"/>
+  <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Pitch Detector</h1>
+    <nav>
+      <a href="{{ url_for('main.home') }}">Home</a> |
+      <a href="{{ url_for('main.pitch_page') }}">Record</a> |
+      <a href="{{ url_for('main.history_page') }}">History</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="main-box">
+      <h2>This is Pitch Detector</h2>
+      <p>A detector to help you find the pitch of your voice!</p>
+      <button id="login-btn" type="button">Log In</button>
+    </div>
+
+    <section id="login-container" hidden>
+      <h2>Login</h2>
+      <p>Enter your credentials to continue.</p>
+      <form id="login-form">
+        <div>
+          <label for="login-username">Username:</label>
+          <input type="text" id="login-username" required />
+        </div>
+        <div>
+          <label for="login-password">Password:</label>
+          <input type="password" id="login-password" required />
+        </div>
+        <button type="submit">Submit</button>
+        <button id="login-close-btn" type="button">Close</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
