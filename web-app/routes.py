@@ -87,9 +87,6 @@ def upload_audio():
 
 @bp.route("/api/recordings", methods=["GET"])
 def list_recordings():
-    """
-    Return recent recordings and their pitch analysis for the History page.
-    """
     db = current_app.db  # type: ignore[attr-defined]
 
     cursor = (
@@ -124,8 +121,5 @@ def list_recordings():
 
 @bp.route("/recordings/<path:filename>", methods=["GET"])
 def serve_recording(filename: str):
-    """
-    Serve saved audio files so they can be played back in the browser.
-    """
     audio_dir = current_app.config["AUDIO_DIR"]
     return send_from_directory(audio_dir, filename)
