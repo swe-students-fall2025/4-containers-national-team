@@ -3,7 +3,6 @@
 # pylint: disable=invalid-name, import-error
 
 import os
-
 from dotenv import load_dotenv
 from flask import Flask, current_app
 from flask_login import LoginManager
@@ -15,6 +14,7 @@ from routes import User
 load_dotenv()
 
 login_manager = LoginManager()
+
 
 def create_app() -> Flask:
     """Create and configure the flask application."""

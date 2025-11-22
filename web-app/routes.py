@@ -23,6 +23,7 @@ from flask_login import (
 
 bp = Blueprint("main", __name__)
 
+
 class User(UserMixin):
     """User class for Flask-Login."""
 
@@ -30,10 +31,12 @@ class User(UserMixin):
         self.id = str(doc["_id"])
         self.username = doc["username"]
 
+
 @bp.route("/")
 def home():
     """Render the home page."""
     return render_template("index.html")
+
 
 @bp.route("/api/signup", methods=["POST"])
 def api_signup():
@@ -50,7 +53,6 @@ def api_signup():
     existing = db.users.find_one({"username": username})
     if existing:
         return jsonify({"message": "Username already taken"}), 400
-
 
     password_hash = generate_password_hash(password)
 
@@ -71,6 +73,7 @@ def api_signup():
         ),
         201,
     )
+
 
 @bp.route("/api/login", methods=["POST"])
 def api_login():
@@ -95,6 +98,7 @@ def api_login():
     login_user(user)
 
     return jsonify({"message": "Login successful"}), 200
+
 
 @bp.route("/pitch")
 @login_required
@@ -209,6 +213,7 @@ def serve_recording(filename: str):
     """Serve a saved audio file by filename."""
     audio_dir = current_app.config["AUDIO_DIR"]
     return send_from_directory(audio_dir, filename)
+
 
 @bp.route("/api/logout", methods=["POST"])
 @login_required
