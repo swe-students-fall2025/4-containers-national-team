@@ -1,5 +1,6 @@
 ![Lint-free](https://github.com/nyu-software-engineering/containerized-app-exercise/actions/workflows/lint.yml/badge.svg)
-<!-- PUT BADGES!!! -->
+[![ML Client CI](https://github.com/swe-students-fall2025/4-containers-national-team/actions/workflows/ml-client-ci.yml/badge.svg)](https://github.com/swe-students-fall2025/4-containers-national-team/actions/workflows/ml-client-ci.yml)
+[![Web App CI](https://github.com/swe-students-fall2025/4-containers-national-team/actions/workflows/web-app-ci.yml/badge.svg)](https://github.com/swe-students-fall2025/4-containers-national-team/actions/workflows/web-app-ci.yml)
 
 # Pitch Detector
 <!-- ![Build and Test](https://github.com/swe-students-fall2025/4-containers-national-team/actions/workflows/build.yaml/badge.svg) -->
