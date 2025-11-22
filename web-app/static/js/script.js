@@ -8,16 +8,16 @@ document.addEventListener("DOMContentLoaded", function () {
   var signupContainer = document.getElementById("signup-container");
   var signupCloseBtn = document.getElementById("signup-close-btn");
   var signupForm = document.getElementById("signup-form");
-  var logoutBtn = document.getElementById("logout-btn");     // (ADD)
+  var logoutBtn = document.getElementById("logout-btn");     
 
-  if (logoutBtn) {                                           // (ADD)
-    logoutBtn.addEventListener("click", async function () {  // (ADD)
-      await fetch("/api/logout", {                           // (ADD)
-        method: "POST",                                      // (ADD)
-        headers: {"Content-Type": "application/json"}        // (ADD)
-      });                                                    // (ADD)
-      window.location.href = "/";                            // (ADD)
-    });                                                      // (ADD)
+  if (logoutBtn) {                                           
+    logoutBtn.addEventListener("click", async function () {  
+      await fetch("/api/logout", {                           
+        method: "POST",                                      
+        headers: {"Content-Type": "application/json"}        
+      });                                                    
+      window.location.href = "/";                            
+    });                                                      
   }
 
 

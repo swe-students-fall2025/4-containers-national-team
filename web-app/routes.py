@@ -171,7 +171,7 @@ def list_recordings():
 
     cursor = (
     db.recordings
-        .find({"user_id": ObjectId(current_user.id)})   # (CHANGE)
+        .find({"user_id": ObjectId(current_user.id)})  
         .sort("created_at", -1)
         .limit(20)
 )
@@ -210,4 +210,4 @@ def serve_recording(filename: str):
 @login_required                               
 def api_logout():                             
     logout_user()                            
-    return jsonify({"message": "Logged out"}), 200   # (ADD)
+    return jsonify({"message": "Logged out"}), 200   
