@@ -20,10 +20,12 @@ from flask_login import (
     logout_user,
     current_user,
 )
+
 bp = Blueprint("main", __name__)
 
 class User(UserMixin):
     """User class for Flask-Login."""
+
     def __init__(self, doc):
         self.id = str(doc["_id"])
         self.username = doc["username"]
@@ -60,12 +62,15 @@ def api_signup():
 
     result = db.users.insert_one(user_doc)
 
-    return jsonify(
-        {
-            "message": "Signup successful",
-            "user_id": str(result.inserted_id),
-        }
-    ), 201
+    return (
+        jsonify(
+            {
+                "message": "Signup successful",
+                "user_id": str(result.inserted_id),
+            }
+        ),
+        201,
+    )
 
 @bp.route("/api/login", methods=["POST"])
 def api_login():
@@ -170,8 +175,7 @@ def list_recordings():
     db = current_app.db  # type: ignore[attr-defined]
 
     cursor = (
-    db.recordings
-        .find({"user_id": ObjectId(current_user.id)})
+        db.recordings.find({"user_id": ObjectId(current_user.id)})
         .sort("created_at", -1)
         .limit(20)
     )

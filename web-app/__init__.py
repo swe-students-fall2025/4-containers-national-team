@@ -11,6 +11,7 @@ from bson import ObjectId
 from pymongo import MongoClient
 from routes import bp as main_bp
 from routes import User
+
 load_dotenv()
 
 login_manager = LoginManager()
