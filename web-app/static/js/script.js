@@ -8,6 +8,18 @@ document.addEventListener("DOMContentLoaded", function () {
   var signupContainer = document.getElementById("signup-container");
   var signupCloseBtn = document.getElementById("signup-close-btn");
   var signupForm = document.getElementById("signup-form");
+  var logoutBtn = document.getElementById("logout-btn");     // (ADD)
+
+  if (logoutBtn) {                                           // (ADD)
+    logoutBtn.addEventListener("click", async function () {  // (ADD)
+      await fetch("/api/logout", {                           // (ADD)
+        method: "POST",                                      // (ADD)
+        headers: {"Content-Type": "application/json"}        // (ADD)
+      });                                                    // (ADD)
+      window.location.href = "/";                            // (ADD)
+    });                                                      // (ADD)
+  }
+
 
 
   // If we're not on a page with the login UI, do nothing
@@ -67,7 +79,7 @@ document.addEventListener("DOMContentLoaded", function () {
       alert(data.message || "Login failed");   
       return;                             
     }
-    closeLoginContainer();                
+    window.location.href = "/pitch";                
   });
   signupForm.addEventListener("submit", async function (e) {
     e.preventDefault();
@@ -86,7 +98,9 @@ document.addEventListener("DOMContentLoaded", function () {
       alert(data.message || "Login failed");
       return;
     }
-    closeSignupContainer();             
+    closeSignupContainer();
+    openLoginContainer();
+           
 });
 
 });

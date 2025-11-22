@@ -9,8 +9,11 @@
 <body>
   <header>
     <h1>Pitch Detector</h1>
+    <div class="header-center">
+      Logged in as {{ current_user.username }}
+    </div>
     <nav>
-      <a href="{{ url_for('main.home') }}">Home</a> |
+      <button id="logout-btn" type="button">Log Out</button> |
       <a href="{{ url_for('main.pitch_page') }}">Record</a> |
       <a href="{{ url_for('main.history_page') }}">History</a>
     </nav>
