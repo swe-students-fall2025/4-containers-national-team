@@ -21,6 +21,7 @@
       <h2>This is Pitch Detector</h2>
       <p>A detector to help you find the pitch of your voice!</p>
       <button id="login-btn" type="button">Log In</button>
+      <button id="signup-btn" type="button">Sign Up</button>
     </div>
 
     <section id="login-container" hidden>
@@ -37,6 +38,22 @@
         </div>
         <button type="submit">Submit</button>
         <button id="login-close-btn" type="button">Close</button>
+      </form>
+    </section>
+    <section id="signup-container" hidden>
+      <h2>Sign Up</h2>
+      <p>Create your account to continue.</p>
+      <form id="signup-form">
+          <div>
+          <label for="signup-username">Username:</label>
+          <input type="text" id="signup-username" required />
+          </div>
+          <div>
+          <label for="signup-password">Password:</label>
+          <input type="password" id="signup-password" required />
+          </div>
+          <button type="submit">Create Account</button>
+          <button id="signup-close-btn" type="button">Close</button>
       </form>
     </section>
   </main>
