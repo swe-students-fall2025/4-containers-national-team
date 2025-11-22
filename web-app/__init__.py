@@ -7,10 +7,10 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, current_app
 from flask_login import LoginManager
+from bson import ObjectId
 from pymongo import MongoClient
 from routes import bp as main_bp
 from routes import User
-from bson import ObjectId
 load_dotenv()
 
 login_manager = LoginManager()
