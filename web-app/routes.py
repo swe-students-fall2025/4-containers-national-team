@@ -23,10 +23,10 @@ from flask_login import (
 bp = Blueprint("main", __name__)
 
 class User(UserMixin):
+    """User class for Flask-Login."""
     def __init__(self, doc):
         self.id = str(doc["_id"])
         self.username = doc["username"]
- 
 
 @bp.route("/")
 def home():
