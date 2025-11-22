@@ -29,14 +29,14 @@ def create_app() -> Flask:
     login_manager.init_app(app)
     login_manager.login_view = "main.home"
 
-    mongo_uri = os.getenv("MONGO_URI")
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+
     if not mongo_uri:
         raise RuntimeError("MONGO_URI environment variable is not set")
 
-    client = MongoClient(mongo_uri, tlsAllowInvalidCertificates=True)
+    client = MongoClient(mongo_uri)
     db_name = os.getenv("MONGO_DB_NAME", "pitchdb")
     app.db = client[db_name]
-
     audio_dir = os.getenv("AUDIO_DIR", os.path.join("data", "recordings"))
     os.makedirs(audio_dir, exist_ok=True)
     app.config["AUDIO_DIR"] = audio_dir
