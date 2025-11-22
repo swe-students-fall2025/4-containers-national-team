@@ -10,7 +10,7 @@ def _get_mongo_client() -> MongoClient:
     mongo_uri = os.getenv("MONGO_URI")
     if not mongo_uri:
         raise RuntimeError("MONGO_URI environment variable is not set. ")
-    return MongoClient(mongo_uri)
+    return MongoClient(mongo_uri, tlsAllowInvalidCertificates=True)
 
 
 def get_db():
