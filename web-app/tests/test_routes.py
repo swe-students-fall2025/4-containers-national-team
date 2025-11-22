@@ -205,7 +205,7 @@ def test_serve_recording(auth_client, app):
     audio_dir = app.config["AUDIO_DIR"]
     filename = "clip.webm"
     path = os.path.join(audio_dir, filename)
-    with open(path, "wb", encoding="utf-8") as file:
+    with open(path, "wb") as file:
         file.write(b"12345")
 
     resp = auth_client.get(f"/recordings/{filename}")

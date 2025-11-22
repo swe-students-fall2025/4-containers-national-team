@@ -34,6 +34,12 @@ jobs:
         run: |
           pipenv install --dev --deploy
 
+      # Important: replace the CUDA torch wheel with a CPU-only one
+      - name: Install CPU-only PyTorch
+        run: |
+          pipenv run pip install "torch==2.3.1+cpu" \
+            --extra-index-url https://download.pytorch.org/whl/cpu
+
       - name: Run tests with coverage
         run: |
           pipenv run pytest \

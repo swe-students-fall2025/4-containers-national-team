@@ -70,8 +70,7 @@ def test_estimate_pitch_uses_torchcrepe(monkeypatch):
     sample_rate = 16000
 
     def fake_predict(  # pylint: disable=too-many-arguments,unused-argument
-        waveform_arg,
-        sample_rate_arg
+        waveform_arg, sample_rate_arg
     ):
         """Fake torchcrepe.predict that returns two frames of 220 Hz."""
         assert waveform_arg is waveform
