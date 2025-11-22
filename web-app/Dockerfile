@@ -20,7 +20,7 @@ COPY . .
 
 # Environment variables your app expects
 ENV FLASK_ENV=production
-ENV PORT=5010
+ENV PORT=5000
 ENV AUDIO_DIR=/data/recordings
 
 # Expose the app port

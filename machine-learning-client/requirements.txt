@@ -1,0 +1,6 @@
+torch
+torchcrepe
+soundfile
+numpy
+pymongo
+python-dotenv
