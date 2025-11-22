@@ -21,8 +21,7 @@ POLL_INTERVAL_SECONDS = 5.0
 
 
 def get_audio_dir() -> Path:
-    """Return the directory where the web app saves recordings.
-    """
+    """Return the directory where the web app saves recordings."""
     env_dir = os.getenv("AUDIO_DIR")
     if env_dir:
         path = Path(env_dir).resolve()
