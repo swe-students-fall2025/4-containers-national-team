@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  web:
+    build: ./web-app
+    container_name: pitch-web
+    ports:
+      - "5000:5000"
+    environment:
+      # Point to the Mongo service below
+      MONGO_URI: "mongodb://mongo:27017"
+      MONGO_DB_NAME: "pitchdb"
+      SECRET_KEY: "change-me-in-real-life"
+      AUDIO_DIR: "/data/recordings"
+    volumes:
+      # Map host directory to container so recordings persist
+      - ./data/recordings:/data/recordings
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6
+    container_name: pitch-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
