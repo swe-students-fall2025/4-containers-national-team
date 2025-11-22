@@ -3,7 +3,8 @@
 import os
 import uuid
 from datetime import datetime
-
+from bson import ObjectId
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import (
     Blueprint,
     current_app,
@@ -12,8 +13,23 @@ from flask import (
     request,
     send_from_directory,
 )
+from flask_login import (
+    UserMixin,
+    login_required,
+    login_user,
+    logout_user,
+    current_user,
+)
 
 bp = Blueprint("main", __name__)
+
+
+class User(UserMixin):
+    """User class for Flask-Login."""
+
+    def __init__(self, doc):
+        self.id = str(doc["_id"])
+        self.username = doc["username"]
 
 
 @bp.route("/")
@@ -22,13 +38,77 @@ def home():
     return render_template("index.html")
 
 
+@bp.route("/api/signup", methods=["POST"])
+def api_signup():
+    """Create a new user account."""
+    data = request.get_json() or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+
+    if not username or not password:
+        return jsonify({"message": "Username and password are required"}), 400
+
+    db = current_app.db
+
+    existing = db.users.find_one({"username": username})
+    if existing:
+        return jsonify({"message": "Username already taken"}), 400
+
+    password_hash = generate_password_hash(password)
+
+    user_doc = {
+        "username": username,
+        "password_hash": password_hash,
+        "created_at": datetime.utcnow(),
+    }
+
+    result = db.users.insert_one(user_doc)
+
+    return (
+        jsonify(
+            {
+                "message": "Signup successful",
+                "user_id": str(result.inserted_id),
+            }
+        ),
+        201,
+    )
+
+
+@bp.route("/api/login", methods=["POST"])
+def api_login():
+    """Log in an existing user."""
+    data = request.get_json() or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+
+    if not username or not password:
+        return jsonify({"message": "Username and password are required"}), 400
+
+    db = current_app.db
+
+    doc = db.users.find_one({"username": username})
+    if not doc:
+        return jsonify({"message": "Invalid username or password"}), 401
+
+    if not check_password_hash(doc["password_hash"], password):
+        return jsonify({"message": "Invalid username or password"}), 401
+
+    user = User(doc)
+    login_user(user)
+
+    return jsonify({"message": "Login successful"}), 200
+
+
 @bp.route("/pitch")
+@login_required
 def pitch_page():
     """Render the recording page."""
     return render_template("pitch.html")
 
 
 @bp.route("/history")
+@login_required
 def history_page():
     """Render the history page."""
     return render_template("history.html")
@@ -55,6 +135,7 @@ def upload_audio():
     db = current_app.db  # type: ignore[attr-defined]
 
     doc = {
+        "user_id": ObjectId(current_user.id),
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow(),
         "source": "mic",
@@ -92,11 +173,16 @@ def upload_audio():
 
 
 @bp.route("/api/recordings", methods=["GET"])
+@login_required
 def list_recordings():
     """Return recent recordings and their pitch analysis as JSON."""
     db = current_app.db  # type: ignore[attr-defined]
 
-    cursor = db.recordings.find().sort("created_at", -1).limit(20)
+    cursor = (
+        db.recordings.find({"user_id": ObjectId(current_user.id)})
+        .sort("created_at", -1)
+        .limit(20)
+    )
 
     recordings = []
     for doc in cursor:
@@ -127,3 +213,11 @@ def serve_recording(filename: str):
     """Serve a saved audio file by filename."""
     audio_dir = current_app.config["AUDIO_DIR"]
     return send_from_directory(audio_dir, filename)
+
+
+@bp.route("/api/logout", methods=["POST"])
+@login_required
+def api_logout():
+    """Log out the current user."""
+    logout_user()
+    return jsonify({"message": "Logged out"}), 200

@@ -5,7 +5,7 @@
 
     body {
       font-family: Arial, sans-serif;
-      background-image: url("pitch-background.jpeg");  
+      background-image: url("../img/pitch-background.jpeg");  
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -85,4 +85,23 @@
     audio {
       margin-top: 15px;
       width: 100%;
+    }
+
+    .header-center {          
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-weight: bold;
+    }
+
+    #logout-btn {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      margin-left: 15px;
+    }
+
+    #logout-btn:hover {
+      text-decoration: underline;
     }

@@ -5,7 +5,7 @@
 
     body {
       font-family: Arial, sans-serif;
-      background-image: url("history-background.jpg");
+      background-image: url("../img/history-background.jpg");
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -86,4 +86,33 @@
       margin-top: 20px;
       text-align: center;
       font-style: italic;
+    }
+    .header-center {          
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-weight: bold;
+    }
+
+    #logout-btn {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      margin-left: 15px;
+    }
+
+    #logout-btn:hover {
+      text-decoration: underline;
+    }
+    
+    button {
+      padding: 12px 20px;
+      margin: 8px;
+      font-size: 16px;
+      background: black;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }

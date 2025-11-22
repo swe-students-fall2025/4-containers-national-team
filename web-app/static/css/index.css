@@ -5,7 +5,7 @@
 
     body {
       font-family: Arial, sans-serif;
-      background-image: url("main-background.jpg"); 
+      background-image: url("../img/main-background.jpg"); 
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -31,7 +31,7 @@
       color: white;
     }
 
-    nav a {
+    nav a{
       color: white;
       text-decoration: none;
       font-weight: bold;
@@ -88,4 +88,49 @@
       border: 2px solid black;
       box-shadow: 0 0 10px rgba(0,0,0,0.4);
       z-index: 1000;
+    }
+
+    #signup-btn {
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background: black;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-top: 15px;
+  }
+
+    #signup-btn:hover {
+      background: #333;
+    }
+
+    #signup-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border: 2px solid black;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+      z-index: 1000;
+    }
+
+    .header-center {          
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-weight: bold;
+    }
+    #logout-btn {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      margin-left: 15px;
+    }
+
+    #logout-btn:hover {
+      text-decoration: underline;
     }
