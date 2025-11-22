@@ -22,10 +22,10 @@ from flask_login import (
 )
 bp = Blueprint("main", __name__)
 
-class User(UserMixin):                   
-    def __init__(self, doc):             
-        self.id = str(doc["_id"])        
-        self.username = doc["username"]  
+class User(UserMixin):
+    def __init__(self, doc):
+        self.id = str(doc["_id"])
+        self.username = doc["username"]
  
 
 @bp.route("/")
@@ -171,10 +171,10 @@ def list_recordings():
 
     cursor = (
     db.recordings
-        .find({"user_id": ObjectId(current_user.id)})  
+        .find({"user_id": ObjectId(current_user.id)})
         .sort("created_at", -1)
         .limit(20)
-)
+    )
 
     recordings = []
     for doc in cursor:
@@ -206,8 +206,9 @@ def serve_recording(filename: str):
     audio_dir = current_app.config["AUDIO_DIR"]
     return send_from_directory(audio_dir, filename)
 
-@bp.route("/api/logout", methods=["POST"])    
-@login_required                               
-def api_logout():                             
-    logout_user()                            
-    return jsonify({"message": "Logged out"}), 200   
+@bp.route("/api/logout", methods=["POST"])
+@login_required
+def api_logout():
+    """Log out the current user."""
+    logout_user()
+    return jsonify({"message": "Logged out"}), 200

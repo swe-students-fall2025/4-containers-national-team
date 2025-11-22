@@ -5,16 +5,15 @@
 import os
 
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, current_app
+from flask_login import LoginManager
 from pymongo import MongoClient
 from routes import bp as main_bp
 from routes import User
-from flask import current_app
 from bson import ObjectId
-from flask_login import LoginManager
 load_dotenv()
 
-login_manager = LoginManager()       
+login_manager = LoginManager()
 
 def create_app() -> Flask:
     """Create and configure the flask application."""
@@ -43,12 +42,12 @@ def create_app() -> Flask:
 
     app.register_blueprint(main_bp)
 
-    @login_manager.user_loader              
-    def load_user(user_id):                 
-        db = current_app.db                 
-        doc = db.users.find_one({"_id": ObjectId(user_id)})   
-        if doc:                             
-            return User(doc)                
-        return None       
+    @login_manager.user_loader
+    def load_user(user_id):
+        db = current_app.db
+        doc = db.users.find_one({"_id": ObjectId(user_id)})
+        if doc:
+            return User(doc)
+        return None
 
     return app
