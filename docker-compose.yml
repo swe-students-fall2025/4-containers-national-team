@@ -10,7 +10,7 @@ services:
       # Point to the Mongo service below
       MONGO_URI: "mongodb://mongo:27017"
       MONGO_DB_NAME: "pitchdb"
-      SECRET_KEY: "change-me-in-real-life"
+      SECRET_KEY: "change-me-in-real-deployment"
       AUDIO_DIR: "/data/recordings"
     volumes:
       # Map host directory to container so recordings persist
@@ -26,6 +26,19 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+
+  ml:
+    build: ./machine-learning-client
+    container_name: pitch-ml
+    environment:
+      MONGO_URI: "mongodb://mongo:27017"
+      MONGO_DB_NAME: "pitchdb"
+      AUDIO_DIR: "/data/recordings"
+    depends_on:
+      - mongo
+    volumes:
+      # share the same recordings directory as 'web'
+      - ./data/recordings:/data/recordings
 
 volumes:
   mongo-data:

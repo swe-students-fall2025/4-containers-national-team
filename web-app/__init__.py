@@ -24,7 +24,7 @@ def create_app() -> Flask:
         static_folder="static",
     )
 
-    app.secret_key = os.getenv("SECRET_KEY", "to change later")
+    app.secret_key = os.getenv("SECRET_KEY", "to change in real deployment")
 
     login_manager.init_app(app)
     login_manager.login_view = "main.home"
