@@ -13,19 +13,18 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# Import the application module. On GitHub runners, importing torch/torchaudio
-# can fail with missing CUDA libraries; in that case we skip this whole module.
+# Import the application module. On GitHub runners, importing soundfile/torch
+# can fail if system libs are missing; in that case we skip this module.
 try:
     import main  # pylint: disable=import-error, wrong-import-position
-except OSError as exc:  # torch / torchaudio shared libs missing on CI
+except OSError as exc:  # soundfile/torch shared libs missing on some systems
     pytest.skip(
-        f"Skipping ML client tests because torch/torchaudio cannot load: {exc}",
+        f"Skipping ML client tests because dependencies cannot load: {exc}",
         allow_module_level=True,
     )
 
 
 def test_get_audio_dir_respects_env_and_creates_dir(tmp_path, monkeypatch):
-    """get_audio_dir should use AUDIO_DIR env var and create the directory."""
     audio_root = tmp_path / "recordings"
     monkeypatch.setenv("AUDIO_DIR", str(audio_root))
 
@@ -36,15 +35,14 @@ def test_get_audio_dir_respects_env_and_creates_dir(tmp_path, monkeypatch):
     assert path.is_dir()
 
 
-def test_hz_to_note_basic():
-    """Check a normal note and the <= 0 guard."""
+def test_hz_to_note_basic_and_guard():
     assert main.hz_to_note(440.0) == "A4"  # concert A
+    assert main.hz_to_note(261.63) == "C4"  # middle C approx
     assert main.hz_to_note(0.0) == "N/A"
     assert main.hz_to_note(-10.0) == "N/A"
 
 
 def test_convert_to_wav_invokes_ffmpeg(tmp_path, monkeypatch):
-    """convert_to_wav should call ffmpeg and produce a .wav path."""
     input_path = tmp_path / "input.webm"
     input_path.write_bytes(b"fake webm")
 
@@ -53,7 +51,6 @@ def test_convert_to_wav_invokes_ffmpeg(tmp_path, monkeypatch):
     calls: dict[str, object] = {}
 
     def fake_run(cmd, check):  # pylint: disable=unused-argument
-        """Fake subprocess.run that pretends to be ffmpeg."""
         calls["cmd"] = cmd
         calls["check"] = check
         out = Path(cmd[-1])
@@ -73,24 +70,19 @@ def test_convert_to_wav_invokes_ffmpeg(tmp_path, monkeypatch):
 
 
 def test_estimate_pitch_uses_torchcrepe(monkeypatch):
-    """estimate_pitch should average valid pitch values and return a confidence."""
-    # Use torch from the main module (so we don't import torch directly here).
     torch_mod = main.torch
 
     waveform = torch_mod.zeros(1, 16000)
     sample_rate = 16000
 
     def fake_predict(*args, **kwargs):  # pylint: disable=unused-argument
-        """Fake torchcrepe.predict that returns two frames of 220 Hz."""
         pitch = torch_mod.tensor([[220.0, 220.0]])
         periodicity = torch_mod.tensor([[0.9, 0.8]])
         return pitch, periodicity
 
     def fake_median(tensor, win):  # pylint: disable=unused-argument
-        """Fake median filter that just returns the input tensor."""
         return tensor
 
-    # Patch torchcrepe functions used by estimate_pitch
     monkeypatch.setattr(main.torchcrepe, "predict", fake_predict)
     monkeypatch.setattr(main.torchcrepe.filter, "median", fake_median)
 
@@ -100,8 +92,29 @@ def test_estimate_pitch_uses_torchcrepe(monkeypatch):
     assert 0.0 <= confidence <= 1.0
 
 
+def test_estimate_pitch_returns_none_when_no_valid(monkeypatch):
+    torch_mod = main.torch
+
+    waveform = torch_mod.zeros(1, 16000)
+    sample_rate = 16000
+
+    def fake_predict(*args, **kwargs):  # pylint: disable=unused-argument
+        pitch = torch_mod.full((1, 3), 200.0)
+        periodicity = torch_mod.zeros((1, 3))  # all below threshold
+        return pitch, periodicity
+
+    def fake_median(tensor, win):  # pylint: disable=unused-argument
+        return tensor
+
+    monkeypatch.setattr(main.torchcrepe, "predict", fake_predict)
+    monkeypatch.setattr(main.torchcrepe.filter, "median", fake_median)
+
+    result = main.estimate_pitch(waveform, sample_rate)
+
+    assert result is None
+
+
 def test_analyze_recording_happy_path(tmp_path, monkeypatch):
-    """analyze_recording should return a dict with pitch info for a valid file."""
     recording = {"audio_filename": "clip.webm"}
     audio_dir = tmp_path
     src_file = audio_dir / recording["audio_filename"]
@@ -117,7 +130,7 @@ def test_analyze_recording_happy_path(tmp_path, monkeypatch):
     monkeypatch.setattr(main, "convert_to_wav", fake_convert_to_wav)
 
     class FakeSF:
-        """Minimal fake soundfile module."""
+        "Fake SF"
 
         @staticmethod
         def read(path, dtype="float32"):  # pylint: disable=unused-argument
@@ -140,13 +153,114 @@ def test_analyze_recording_happy_path(tmp_path, monkeypatch):
 
 
 def test_analyze_recording_missing_filename_raises(tmp_path):
-    """If audio_filename is missing, analyze_recording should raise."""
     with pytest.raises(RuntimeError):
         main.analyze_recording({}, tmp_path)
 
 
 def test_analyze_recording_missing_file_raises(tmp_path):
-    """If the referenced file does not exist, we should get FileNotFoundError."""
     rec = {"audio_filename": "nope.webm"}
     with pytest.raises(FileNotFoundError):
         main.analyze_recording(rec, tmp_path)
+
+
+# ----- worker_loop tests -----
+
+
+class FakeCursor(list):
+    """Mimic a MongoDB cursor with .limit()."""
+
+    def limit(self, n):
+        return FakeCursor(self[:n])
+
+
+class FakeRecordings:
+    """Mimic a fake recording."""
+
+    def __init__(self, docs):
+        self.docs = docs
+        self.updates = []
+
+    def find(self, query):
+        _ = query
+        return FakeCursor(self.docs)
+
+    def update_one(self, filter_, update):
+        self.updates.append((filter_, update))
+
+
+class FakeDB:
+    """Mimic a fake database."""
+
+    def __init__(self, docs):
+        self.recordings = FakeRecordings(docs)
+
+
+def test_worker_loop_processes_pending_recording(monkeypatch, tmp_path):
+    docs = [
+        {"_id": "abc123", "status": "pending", "audio_filename": "clip.webm"},
+    ]
+    fake_db = FakeDB(docs)
+
+    monkeypatch.setattr(main, "get_db", lambda: fake_db)
+    monkeypatch.setattr(main, "get_audio_dir", lambda: tmp_path)
+
+    def fake_analyze(recording, audio_dir):  # pylint: disable=unused-argument
+        return {
+            "pitch_hz": 440.0,
+            "pitch_note": "A4",
+            "confidence": 0.9,
+            "method": "test",
+        }
+
+    monkeypatch.setattr(main, "analyze_recording", fake_analyze)
+
+    sleep_calls = []
+
+    def fake_sleep(seconds):
+        sleep_calls.append(seconds)
+        # Stop the infinite loop after one iteration
+        raise KeyboardInterrupt()
+
+    monkeypatch.setattr(main.time, "sleep", fake_sleep)
+
+    with pytest.raises(KeyboardInterrupt):
+        main.worker_loop()
+
+    # Ensure we attempted to update the recording as "done"
+    assert fake_db.recordings.updates, "worker_loop should update the recording"
+    _filter, update = fake_db.recordings.updates[0]
+    assert _filter == {"_id": "abc123"}
+    assert update["$set"]["status"] == "done"
+    assert update["$set"]["analysis"]["pitch_note"] == "A4"
+    assert sleep_calls, "worker_loop should call time.sleep()"
+
+
+def test_worker_loop_handles_analysis_error(monkeypatch, tmp_path):
+    docs = [
+        {"_id": "xyz789", "status": "pending", "audio_filename": "clip.webm"},
+    ]
+    fake_db = FakeDB(docs)
+
+    monkeypatch.setattr(main, "get_db", lambda: fake_db)
+    monkeypatch.setattr(main, "get_audio_dir", lambda: tmp_path)
+
+    def fake_analyze(recording, audio_dir):  # pylint: disable=unused-argument
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(main, "analyze_recording", fake_analyze)
+
+    def fake_sleep(seconds):  # pylint: disable=unused-argument
+        raise KeyboardInterrupt()
+
+    monkeypatch.setattr(main.time, "sleep", fake_sleep)
+
+    with pytest.raises(KeyboardInterrupt):
+        main.worker_loop()
+
+    assert (
+        fake_db.recordings.updates
+    ), "worker_loop should update the recording on error"
+    _filter, update = fake_db.recordings.updates[0]
+    assert _filter == {"_id": "xyz789"}
+    assert update["$set"]["status"] == "error"
+    assert "boom" in update["$set"]["error_message"]
