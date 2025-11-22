@@ -22,6 +22,11 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Install system dependencies for soundfile
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsndfile1
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -34,7 +39,6 @@ jobs:
         run: |
           pipenv install --dev --deploy
 
-      # Important: replace the CUDA torch wheel with a CPU-only one
       - name: Install CPU-only PyTorch
         run: |
           pipenv run pip install "torch==2.3.1+cpu" \
