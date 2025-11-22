@@ -8,6 +8,10 @@ pylint = "*"
 black = "*"
 pymongo = "*"
 python-dotenv = "*"
+torch = "*"
+torchcrepe = "*"
+torchaudio = "*"
+soundfile = "*"
 
 [dev-packages]
 pylint = "*"

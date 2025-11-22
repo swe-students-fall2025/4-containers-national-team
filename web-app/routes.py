@@ -4,6 +4,7 @@ import os
 import uuid
 from datetime import datetime
 from bson import ObjectId
+from bson.errors import InvalidId
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import (
     Blueprint,
@@ -149,34 +150,49 @@ def upload_audio():
     result = db.recordings.insert_one(doc)
     recording_id = str(result.inserted_id)
 
-    # for now just a dummy analysis
-    # ml client will take care of this when it's done
-    dummy_analysis = {
-        "pitch_hz": 440.0,
-        "pitch_note": "A4",
-        "confidence": 1.0,
-        "method": "dummy",
-    }
-    db.recordings.update_one(
-        {"_id": result.inserted_id},
-        {
-            "$set": {
-                "analysis": dummy_analysis,
-                "status": "done",
-                "updated_at": datetime.utcnow(),
-            }
-        },
-    )
-    # --------------------------
+    return jsonify({"id": recording_id, "status": "pending"}), 201
 
-    return jsonify({"id": recording_id, "analysis": dummy_analysis}), 201
+
+@bp.route("/api/recordings/<recording_id>", methods=["GET"])
+def get_recording(recording_id: str):
+    """Return one recording (including analysis) as JSON."""
+    db = current_app.db
+
+    try:
+        oid = ObjectId(recording_id)
+    except InvalidId:
+        return jsonify({"error": "invalid recording id"}), 400
+
+    doc = db.recordings.find_one({"_id": oid})
+    if not doc:
+        return jsonify({"error": "not found"}), 404
+
+    analysis = doc.get("analysis") or {}
+
+    return jsonify(
+        {
+            "id": recording_id,
+            "status": doc.get("status"),
+            "created_at": (
+                doc.get("created_at").isoformat() if doc.get("created_at") else None
+            ),
+            "audio_filename": doc.get("audio_filename"),
+            "audio_url": f"/recordings/{doc.get('audio_filename')}",
+            "analysis": {
+                "pitch_hz": analysis.get("pitch_hz"),
+                "pitch_note": analysis.get("pitch_note"),
+                "confidence": analysis.get("confidence"),
+            },
+            "error_message": doc.get("error_message"),
+        }
+    )
 
 
 @bp.route("/api/recordings", methods=["GET"])
 @login_required
 def list_recordings():
     """Return recent recordings and their pitch analysis as JSON."""
-    db = current_app.db  # type: ignore[attr-defined]
+    db = current_app.db
 
     cursor = (
         db.recordings.find({"user_id": ObjectId(current_user.id)})
