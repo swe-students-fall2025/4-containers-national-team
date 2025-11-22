@@ -1,36 +1,47 @@
+"""Pytest fixtures and fake MongoDB for the web-app tests."""
+
+# We intentionally create small helper classes with very few methods,
+# and we redefine fixture names that pytest expects, so we relax
+# a couple of pylint rules here.
+# pylint: disable=too-few-public-methods, redefined-outer-name
+
+from pathlib import Path
 import os
-from datetime import datetime
+import sys
 
 import pytest
 from bson import ObjectId
-import sys
-from pathlib import Path
 
+# Make sure the parent directory (containing __init__.py) is on the path
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from __init__ import create_app
+from __init__ import create_app  # pylint: disable=import-error, wrong-import-position
 
 
 class FakeInsertResult:
+    """Simple stand-in for pymongo's InsertOneResult."""
+
     def __init__(self, inserted_id):
         self.inserted_id = inserted_id
 
 
 class FakeCursor:
-    """Simple chainable cursor supporting sort().limit() and iteration."""
+    """Chainable cursor supporting sort().limit() and iteration."""
 
     def __init__(self, docs):
         self._docs = list(docs)
 
     def sort(self, key, direction):
+        """Sort the stored docs by key and return self."""
         reverse = direction == -1
         self._docs.sort(key=lambda d: d.get(key), reverse=reverse)
         return self
 
-    def limit(self, n):
-        self._docs = self._docs[:n]
+    def limit(self, count):
+        """Limit the number of docs and return self."""
+        self._docs = self._docs[:count]
         return self
 
     def __iter__(self):
@@ -38,73 +49,75 @@ class FakeCursor:
 
 
 class FakeCollection:
-    """Very small subset of pymongo Collection API used by our routes."""
+    """Minimal subset of the pymongo Collection API used by our routes."""
 
     def __init__(self):
         self.docs = []
 
     def insert_one(self, doc):
-        d = dict(doc)
-        d.setdefault("_id", ObjectId())
-        self.docs.append(d)
-        return FakeInsertResult(d["_id"])
+        """Insert a document and assign an _id if missing."""
+        new_doc = dict(doc)
+        new_doc.setdefault("_id", ObjectId())
+        self.docs.append(new_doc)
+        return FakeInsertResult(new_doc["_id"])
 
     def find_one(self, query):
-        for d in self.docs:
-            if all(d.get(k) == v for k, v in query.items()):
-                return d
+        """Return the first document matching the query, or None."""
+        for document in self.docs:
+            if all(document.get(k) == v for k, v in query.items()):
+                return document
         return None
 
     def find(self, query):
+        """Return a cursor over documents matching the query."""
         matched = [
-            d for d in self.docs
-            if all(d.get(k) == v for k, v in query.items())
+            document
+            for document in self.docs
+            if all(document.get(k) == v for k, v in query.items())
         ]
         return FakeCursor(matched)
 
 
 class FakeDB:
+    """Fake database object with users and recordings collections."""
+
     def __init__(self):
         self.users = FakeCollection()
         self.recordings = FakeCollection()
 
 
 @pytest.fixture
-def app(tmp_path, monkeypatch):
+def app(tmp_path):
     """Create a Flask app instance with a fake DB and temp AUDIO_DIR."""
-    # Make sure env vars exist, but the real Mongo isn't actually used
+    # These env vars are read by create_app, but the real Mongo server
+    # is never contacted because we immediately swap in FakeDB.
     os.environ["SECRET_KEY"] = "test-secret"
     os.environ["MONGO_URI"] = "mongodb://example"
     os.environ["MONGO_DB_NAME"] = "testdb"
     os.environ["AUDIO_DIR"] = str(tmp_path)
 
-    app = create_app()
-    app.config["TESTING"] = True
-    app.db = FakeDB()  # swap in our fake DB
+    flask_app = create_app()
+    flask_app.config["TESTING"] = True
+    flask_app.db = FakeDB()  # swap in our fake DB
 
-    return app
+    return flask_app
 
 
 @pytest.fixture
 def client(app):
-    """Flask test client."""
+    """Return a Flask test client for the app fixture."""
     return app.test_client()
 
 
 @pytest.fixture
 def fake_db(app):
-    """Access to the fake DB used by the app."""
+    """Return the FakeDB instance used by the app."""
     return app.db
 
 
 @pytest.fixture
 def auth_client(client):
-    """
-    Test client with a logged-in user.
-
-    We go through the real /api/signup and /api/login routes so we exercise
-    the actual app logic.
-    """
+    """Test client with a logged-in user created via real signup/login routes."""
     # Signup
     resp = client.post(
         "/api/signup",

@@ -1,17 +1,21 @@
+"""Route and API tests for the pitch-detector web app."""
+
 from datetime import datetime
 from io import BytesIO
+import os
 
 from bson import ObjectId
 
 
 def test_home_page_renders(client):
+    """Home page should return 200 and contain HTML."""
     resp = client.get("/")
     assert resp.status_code == 200
-    # Just sanity-check that we got HTML back
     assert b"<html" in resp.data
 
 
 def test_signup_validation(client):
+    """Signup should validate missing fields and handle duplicates."""
     # Missing username and password
     resp = client.post("/api/signup", json={})
     assert resp.status_code == 400
@@ -34,6 +38,7 @@ def test_signup_validation(client):
 
 
 def test_login_validation(client):
+    """Login endpoint should check for credentials and invalid combos."""
     # Need username + password
     resp = client.post("/api/login", json={})
     assert resp.status_code == 400
@@ -65,25 +70,27 @@ def test_login_validation(client):
 
 
 def test_pitch_requires_login(client):
+    """Pitch page should redirect anonymous users to the login page."""
     resp = client.get("/pitch")
-    # Flask-Login should redirect anonymous users to the login view ("/")
     assert resp.status_code == 302
     assert "/" in resp.headers["Location"]
 
 
 def test_history_requires_login(client):
+    """History page should also redirect anonymous users."""
     resp = client.get("/history")
     assert resp.status_code == 302
 
 
 def test_pitch_page_after_login(auth_client):
+    """Logged-in users should be able to reach the pitch page."""
     resp = auth_client.get("/pitch")
     assert resp.status_code == 200
-    # Page should contain some of the text from the template
     assert b"Record Your Voice" in resp.data
 
 
 def test_upload_audio_validation(auth_client):
+    """Upload endpoint should validate missing/empty audio fields."""
     # No 'audio' field
     resp = auth_client.post("/api/upload", data={})
     assert resp.status_code == 400
@@ -98,6 +105,7 @@ def test_upload_audio_validation(auth_client):
 
 
 def test_upload_audio_success(auth_client, app, fake_db):
+    """Successful upload should save file and create a pending recording."""
     audio_dir = app.config["AUDIO_DIR"]
 
     resp = auth_client.post(
@@ -111,32 +119,29 @@ def test_upload_audio_success(auth_client, app, fake_db):
     assert data["status"] == "pending"
 
     # File should have been written into AUDIO_DIR
-    import os
-
     files = os.listdir(audio_dir)
     assert len(files) == 1
 
     # DB should contain the new recording
-    from bson import ObjectId as _OID
-
-    doc = fake_db.recordings.find_one({"_id": _OID(rec_id)})
+    doc = fake_db.recordings.find_one({"_id": ObjectId(rec_id)})
     assert doc is not None
     assert doc["status"] == "pending"
 
 
 def test_get_recording_invalid_id(client):
+    """Invalid ObjectId should return 400."""
     resp = client.get("/api/recordings/not-an-objectid")
     assert resp.status_code == 400
 
 
 def test_get_recording_not_found(client):
-    # Valid ObjectId, but nothing in fake DB
+    """Valid ObjectId with no DB entry should return 404."""
     resp = client.get(f"/api/recordings/{ObjectId()}")
     assert resp.status_code == 404
 
 
 def test_get_recording_success(auth_client, fake_db):
-    # Create a recording document directly in the fake DB
+    """Happy-path fetch of an existing recording."""
     rec_doc = {
         "user_id": ObjectId(),
         "created_at": datetime.utcnow(),
@@ -162,7 +167,7 @@ def test_get_recording_success(auth_client, fake_db):
 
 
 def test_list_recordings_filters_by_user(auth_client, fake_db):
-    # Grab the logged-in user from fake_db.users
+    """List recordings endpoint should only return current user's recordings."""
     assert fake_db.users.docs  # created by /api/signup in auth_client
     user_id = fake_db.users.docs[0]["_id"]
 
@@ -196,13 +201,12 @@ def test_list_recordings_filters_by_user(auth_client, fake_db):
 
 
 def test_serve_recording(auth_client, app):
-    import os
-
+    """Serving a recording should return the raw bytes from AUDIO_DIR."""
     audio_dir = app.config["AUDIO_DIR"]
     filename = "clip.webm"
     path = os.path.join(audio_dir, filename)
-    with open(path, "wb") as f:
-        f.write(b"12345")
+    with open(path, "wb", encoding="utf-8") as file:
+        file.write(b"12345")
 
     resp = auth_client.get(f"/recordings/{filename}")
     assert resp.status_code == 200
@@ -210,9 +214,9 @@ def test_serve_recording(auth_client, app):
 
 
 def test_logout(auth_client):
+    """Logout should clear the session so protected pages redirect again."""
     resp = auth_client.post("/api/logout")
     assert resp.status_code == 200
 
-    # Now accessing a protected page should redirect again
     resp2 = auth_client.get("/pitch")
     assert resp2.status_code == 302
