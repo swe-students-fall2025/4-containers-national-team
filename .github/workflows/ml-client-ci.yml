@@ -54,6 +54,6 @@ jobs:
         run: |
           pipenv run pytest \
             --cov=db \
-            --cov=tests/test_db.py \
+            --cov=tests/test_db \
             --cov-report=term-missing \
             --cov-fail-under=80
