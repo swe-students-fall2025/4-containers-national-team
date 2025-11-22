@@ -1,9 +1,26 @@
-// Login functionality 
+// Login / Signup functionality 
 document.addEventListener("DOMContentLoaded", function () {
   var loginBtn = document.getElementById("login-btn");
   var loginContainer = document.getElementById("login-container");
   var loginCloseBtn = document.getElementById("login-close-btn");
   var loginForm = document.getElementById("login-form");
+  var signupBtn = document.getElementById("signup-btn");
+  var signupContainer = document.getElementById("signup-container");
+  var signupCloseBtn = document.getElementById("signup-close-btn");
+  var signupForm = document.getElementById("signup-form");
+  var logoutBtn = document.getElementById("logout-btn");     
+
+  if (logoutBtn) {                                           
+    logoutBtn.addEventListener("click", async function () {  
+      await fetch("/api/logout", {                           
+        method: "POST",                                      
+        headers: {"Content-Type": "application/json"}        
+      });                                                    
+      window.location.href = "/";                            
+    });                                                      
+  }
+
+
 
   // If we're not on a page with the login UI, do nothing
   if (!loginBtn || !loginContainer || !loginCloseBtn || !loginForm) {
@@ -18,14 +35,32 @@ document.addEventListener("DOMContentLoaded", function () {
     loginContainer.hidden = true;
   }
 
+  function openSignupContainer() {
+    signupContainer.hidden = false;
+  }
+
+  function closeSignupContainer() {
+    signupContainer.hidden = true;
+  }
+
+
   loginBtn.addEventListener("click", openLoginContainer);
   loginCloseBtn.addEventListener("click", closeLoginContainer);
+  signupBtn.addEventListener("click", openSignupContainer);
+  signupCloseBtn.addEventListener("click", closeSignupContainer);
+
 
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && !loginContainer.hidden) {
-      closeLoginContainer();
+  if (e.key === "Escape") {      
+    if (!loginContainer.hidden){
+       closeLoginContainer();     
     }
-  });
+    if (!signupContainer.hidden) {
+      closeSignupContainer();
+    }
+  }
+});
+
 
   loginForm.addEventListener("submit", async function (e) {
     e.preventDefault();
@@ -40,11 +75,36 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     const data = await response.json();
-    // TODO: handle login result (success/failure) once backend exists
-
-    closeLoginContainer();
+    if (!response.ok) {                   
+      alert(data.message || "Login failed");   
+      return;                             
+    }
+    window.location.href = "/pitch";                
   });
+  signupForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    var username = document.getElementById("signup-username").value;
+    var password = document.getElementById("signup-password").value;
+
+    const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json();   
+    if (!response.ok) {                   
+      alert(data.message || "Login failed");
+      return;
+    }
+    closeSignupContainer();
+    openLoginContainer();
+           
 });
+
+});
+
 
 
 // Audio recording functionality
