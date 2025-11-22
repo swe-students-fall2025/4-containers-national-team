@@ -1,0 +1,42 @@
+name: Web App CI
+
+on:
+  push:
+    paths:
+      - "web-app/**"
+      - ".github/workflows/web-app-ci.yml"
+  pull_request:
+    paths:
+      - "web-app/**"
+      - ".github/workflows/web-app-ci.yml"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: web-app
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install pipenv
+        run: pip install pipenv
+
+      - name: Install dependencies with pipenv
+        run: |
+          pipenv install --dev --deploy
+
+      - name: Run tests with coverage
+        run: |
+          pipenv run pytest \
+            --cov=. \
+            --cov-report=term-missing \
+            --cov-fail-under=80
