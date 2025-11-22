@@ -20,8 +20,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });                                                      
   }
 
-
-
   // If we're not on a page with the login UI, do nothing
   if (!loginBtn || !loginContainer || !loginCloseBtn || !loginForm) {
     return;
@@ -43,24 +41,21 @@ document.addEventListener("DOMContentLoaded", function () {
     signupContainer.hidden = true;
   }
 
-
   loginBtn.addEventListener("click", openLoginContainer);
   loginCloseBtn.addEventListener("click", closeLoginContainer);
   signupBtn.addEventListener("click", openSignupContainer);
   signupCloseBtn.addEventListener("click", closeSignupContainer);
 
-
   document.addEventListener("keydown", function (e) {
-  if (e.key === "Escape") {      
-    if (!loginContainer.hidden){
-       closeLoginContainer();     
+    if (e.key === "Escape") {      
+      if (!loginContainer.hidden){
+        closeLoginContainer();     
+      }
+      if (!signupContainer.hidden) {
+        closeSignupContainer();
+      }
     }
-    if (!signupContainer.hidden) {
-      closeSignupContainer();
-    }
-  }
-});
-
+  });
 
   loginForm.addEventListener("submit", async function (e) {
     e.preventDefault();
@@ -81,6 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     window.location.href = "/pitch";                
   });
+
   signupForm.addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -88,9 +84,9 @@ document.addEventListener("DOMContentLoaded", function () {
     var password = document.getElementById("signup-password").value;
 
     const response = await fetch('/api/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
     });
 
     const data = await response.json();   
@@ -100,9 +96,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     closeSignupContainer();
     openLoginContainer();
-           
-});
-
+  });
 });
 
 
@@ -123,6 +117,40 @@ document.addEventListener("DOMContentLoaded", function () {
   var mediaRecorder = null;
   var chunks = [];
 
+  // --- helpers for polling analysis ---
+
+  function sleep(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  async function waitForAnalysis(recordingId, maxTries, delayMs) {
+    maxTries = maxTries || 20;   // ~20 seconds total
+    delayMs = delayMs || 1000;
+
+    for (var i = 0; i < maxTries; i++) {
+      try {
+        var res = await fetch("/api/recordings/" + recordingId);
+        if (res.ok) {
+          var rec = await res.json();
+
+          if (rec.status === "done" && rec.analysis && rec.analysis.pitch_hz != null) {
+            return rec.analysis;
+          }
+          if (rec.status === "error") {
+            console.error("Analysis error:", rec.error_message);
+            return null;
+          }
+        }
+      } catch (err) {
+        console.error("Error while polling analysis:", err);
+      }
+      await sleep(delayMs);
+    }
+    return null; // timed out
+  }
+
   async function initMedia() {
     try {
       var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -141,8 +169,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         statusEl.textContent = "Recording finished.";
 
-        // Upload to backend and show analysis
-        saveRecordingForHistory(blob);
+        // Upload to backend and then wait for analysis
+        uploadRecording(blob);
       };
 
       statusEl.textContent = "Microphone ready. Press 'Start Recording'.";
@@ -154,38 +182,65 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Now uploads to /api/upload instead of localStorage
-  async function saveRecordingForHistory(blob) {
+  // Uploads to /api/upload, then polls /api/recordings/<id> for analysis
+  async function uploadRecording(blob) {
     try {
       var formData = new FormData();
       formData.append("audio", blob, "recording.webm");
+
+      if (analysisEl) {
+        analysisEl.textContent = "";
+      }
+      statusEl.textContent = "Uploading recording...";
 
       var response = await fetch("/api/upload", {
         method: "POST",
         body: formData
       });
 
+      var data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Upload failed");
+        statusEl.textContent = data.error || "Upload failed.";
+        return;
       }
 
-      var data = await response.json();
-      statusEl.textContent = "Recording uploaded successfully.";
+      if (!data.id) {
+        statusEl.textContent = "Upload succeeded, but no recording ID returned.";
+        return;
+      }
 
-      if (analysisEl && data.analysis) {
-        var a = data.analysis;
-        var pitchHz = a.pitch_hz;
-        var pitchNote = a.pitch_note;
-        var confidence = a.confidence;
+      statusEl.textContent = "Recording uploaded. Analyzing pitch...";
+
+      // Poll backend for analysis
+      var analysis = await waitForAnalysis(data.id);
+
+      if (!analysis) {
+        statusEl.textContent = "Analysis did not complete in time. Check History.";
+        if (analysisEl) {
+          analysisEl.textContent = "";
+        }
+        return;
+      }
+
+      // Display analysis on the Record page
+      if (analysisEl) {
+        var pitchHz = analysis.pitch_hz;
+        var pitchNote = analysis.pitch_note;
+        var confidence = analysis.confidence;
 
         var text = "Detected pitch: ";
         if (pitchNote) {
           text += pitchNote;
           if (pitchHz != null) {
-            text += " (" + pitchHz.toFixed ? pitchHz.toFixed(1) + " Hz" : pitchHz + " Hz" + ")";
+            text +=
+              " (" +
+              (pitchHz.toFixed ? pitchHz.toFixed(1) : pitchHz) +
+              " Hz)";
           }
         } else if (pitchHz != null) {
-          text += (pitchHz.toFixed ? pitchHz.toFixed(1) : pitchHz) + " Hz";
+          text +=
+            (pitchHz.toFixed ? pitchHz.toFixed(1) : pitchHz) + " Hz";
         } else {
           text += "(not available)";
         }
@@ -196,9 +251,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         analysisEl.textContent = text;
       }
+
+      statusEl.textContent = "Analysis complete.";
     } catch (err) {
       console.error(err);
-      statusEl.textContent = "Error uploading recording.";
+      statusEl.textContent = "Error uploading or analyzing recording.";
       if (analysisEl) {
         analysisEl.textContent = "";
       }

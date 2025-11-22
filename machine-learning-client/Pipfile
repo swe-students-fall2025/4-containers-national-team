@@ -11,7 +11,7 @@ python-dotenv = "*"
 torch = "*"
 torchcrepe = "*"
 torchaudio = "*"
-torchcodec = "*"
+soundfile = "*"
 
 [dev-packages]
 pylint = "*"
