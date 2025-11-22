@@ -23,7 +23,7 @@ docker compose build
 docker compose up
 ```
 4. **Access website!**
-http://127.0.0.1:5010
+http://127.0.0.1:5000
 
 
 
